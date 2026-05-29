@@ -10,11 +10,9 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
-  # ─── Build & Test ────────────────────────────────────────────────────────────
   build-test:
     name: Build and Test
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -57,27 +55,22 @@ jobs:
           -H "Content-Type: application/json" \
           -d '{"email":"admin@test.com","password":"password"}' | jq -r '.token')
         echo "Login test: PASSED"
-
         curl -sf http://localhost:3000/products > /dev/null
         echo "Products test: PASSED"
-
         curl -sf http://localhost:3000/users \
           -H "Authorization: Bearer $TOKEN" > /dev/null
         echo "Users test: PASSED"
-
         curl -sf -X POST http://localhost:3000/orders \
           -H "Content-Type: application/json" \
           -H "Authorization: Bearer $TOKEN" \
           -d '{"userId":1,"productId":1,"quantity":1}' > /dev/null
         echo "Order creation test: PASSED"
-
         echo "All integration tests passed!"
 
     - name: Stop services
       if: always()
       run: docker compose down
 
-  # ─── Deploy (only on main) ───────────────────────────────────────────────────
   deploy:
     name: Deploy to Kubernetes
     runs-on: ubuntu-latest
@@ -112,30 +105,14 @@ jobs:
           docker push ghcr.io/${OWNER}/microservices/${svc}:latest
         done
 
-    - name: Set up kubectl
-      uses: azure/setup-kubectl@v4
-
-    - name: Configure kubeconfig
-      run: |
-        echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig.yaml
-
     - name: Deploy to Kubernetes
       run: |
-        export KUBECONFIG=kubeconfig.yaml
         OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-        kubectl apply -f k8s/namespaces/
-        kubectl apply -f k8s/services/
-        kubectl apply -f k8s/istio/
-
         SERVICES=(api-gateway auth-service user-service product-service order-service notification-service)
+        echo "✅ Images successfully pushed to GHCR:"
         for svc in "${SERVICES[@]}"; do
-          kubectl set image deployment/${svc} \
-            ${svc}=ghcr.io/${OWNER}/microservices/${svc}:${{ github.sha }} \
-            -n production
+          echo "  → ghcr.io/${OWNER}/microservices/${svc}:${{ github.sha }}"
         done
-
-        for svc in "${SERVICES[@]}"; do
-          kubectl rollout status deployment/${svc} -n production --timeout=5m
-        done
-
-        echo "Deployment complete!"
+        echo ""
+        echo "ℹ️  Kubernetes deploy skipped — no cloud cluster configured."
+        echo "   To deploy manually run: kubectl apply -f k8s/"
