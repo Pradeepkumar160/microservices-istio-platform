@@ -8,7 +8,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: ${{ github.repository_owner }}/microservices
 
 jobs:
   # ─── Build & Test ────────────────────────────────────────────────────────────
@@ -39,7 +38,6 @@ jobs:
 
     - name: Start services with Docker Compose
       run: |
-        # Patch compose to use sha-tagged images for testing
         docker compose up -d --build
         echo "Waiting for services to be healthy..."
         sleep 30
@@ -55,22 +53,18 @@ jobs:
 
     - name: Run integration tests
       run: |
-        # Test login
         TOKEN=$(curl -sf -X POST http://localhost:3000/auth/login \
           -H "Content-Type: application/json" \
           -d '{"email":"admin@test.com","password":"password"}' | jq -r '.token')
         echo "Login test: PASSED"
 
-        # Test products (public)
         curl -sf http://localhost:3000/products > /dev/null
         echo "Products test: PASSED"
 
-        # Test users (protected)
         curl -sf http://localhost:3000/users \
           -H "Authorization: Bearer $TOKEN" > /dev/null
         echo "Users test: PASSED"
 
-        # Test create order (protected)
         curl -sf -X POST http://localhost:3000/orders \
           -H "Content-Type: application/json" \
           -H "Authorization: Bearer $TOKEN" \
@@ -101,15 +95,20 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Set lowercase image prefix   # ← FIX: compute lowercase owner here
+      run: |
+        echo "IMAGE_PREFIX=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/microservices" >> $GITHUB_ENV
+
     - name: Build and push images
       run: |
         SERVICES=(api-gateway auth-service user-service product-service order-service notification-service)
         for svc in "${SERVICES[@]}"; do
-          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/$svc:${{ github.sha }} \
-                       -t ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/$svc:latest \
-                       ./services/$svc
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/$svc:${{ github.sha }}
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/$svc:latest
+          docker build \
+            -t ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${svc}:${{ github.sha }} \
+            -t ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${svc}:latest \
+            ./services/${svc}
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${svc}:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${svc}:latest
         done
 
     - name: Set up kubectl
@@ -127,16 +126,15 @@ jobs:
         kubectl apply -f k8s/services/
         kubectl apply -f k8s/istio/
 
-        # Update image tags
         SERVICES=(api-gateway auth-service user-service product-service order-service notification-service)
         for svc in "${SERVICES[@]}"; do
-          kubectl set image deployment/$svc $svc=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/$svc:${{ github.sha }} \
+          kubectl set image deployment/${svc} \
+            ${svc}=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${svc}:${{ github.sha }} \
             -n production
         done
 
-        # Wait for rollout
         for svc in "${SERVICES[@]}"; do
-          kubectl rollout status deployment/$svc -n production --timeout=5m
+          kubectl rollout status deployment/${svc} -n production --timeout=5m
         done
 
         echo "Deployment complete!"
