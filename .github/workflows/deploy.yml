@@ -1,4 +1,4 @@
-name: CI/CD — Build, Test & Deploy Microservices
+﻿name: CI/CD — Build, Test & Deploy Microservices
 
 on:
   push:
@@ -95,7 +95,7 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Set lowercase image prefix   # ← FIX: compute lowercase owner here
+    - name: Set lowercase image prefix
       run: |
         echo "IMAGE_PREFIX=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/microservices" >> $GITHUB_ENV
 
