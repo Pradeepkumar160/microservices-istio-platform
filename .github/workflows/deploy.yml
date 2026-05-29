@@ -95,20 +95,17 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Set lowercase image prefix
-      run: |
-        echo "IMAGE_PREFIX=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/microservices" >> $GITHUB_ENV
-
     - name: Build and push images
       run: |
+        OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
         SERVICES=(api-gateway auth-service user-service product-service order-service notification-service)
         for svc in "${SERVICES[@]}"; do
           docker build \
-            -t ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${svc}:${{ github.sha }} \
-            -t ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${svc}:latest \
+            -t ghcr.io/${OWNER}/microservices/${svc}:${{ github.sha }} \
+            -t ghcr.io/${OWNER}/microservices/${svc}:latest \
             ./services/${svc}
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${svc}:${{ github.sha }}
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${svc}:latest
+          docker push ghcr.io/${OWNER}/microservices/${svc}:${{ github.sha }}
+          docker push ghcr.io/${OWNER}/microservices/${svc}:latest
         done
 
     - name: Set up kubectl
@@ -117,11 +114,11 @@ jobs:
     - name: Configure kubeconfig
       run: |
         echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig.yaml
-        export KUBECONFIG=kubeconfig.yaml
 
     - name: Deploy to Kubernetes
       run: |
         export KUBECONFIG=kubeconfig.yaml
+        OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
         kubectl apply -f k8s/namespaces/
         kubectl apply -f k8s/services/
         kubectl apply -f k8s/istio/
@@ -129,7 +126,7 @@ jobs:
         SERVICES=(api-gateway auth-service user-service product-service order-service notification-service)
         for svc in "${SERVICES[@]}"; do
           kubectl set image deployment/${svc} \
-            ${svc}=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${svc}:${{ github.sha }} \
+            ${svc}=ghcr.io/${OWNER}/microservices/${svc}:${{ github.sha }} \
             -n production
         done
 
