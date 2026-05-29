@@ -1,0 +1,27 @@
+##############################################################################
+# PEER AUTHENTICATION — enforce STRICT mTLS for all services in production
+##############################################################################
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default-mtls
+  namespace: production
+spec:
+  mtls:
+    mode: STRICT
+
+---
+##############################################################################
+# AUTHORIZATION POLICY — allow internal service-to-service communication
+##############################################################################
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-internal
+  namespace: production
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        namespaces: ["production", "istio-system"]

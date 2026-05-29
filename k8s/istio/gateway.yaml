@@ -1,0 +1,48 @@
+##############################################################################
+# ISTIO GATEWAY — entry point for all external traffic
+##############################################################################
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: mesh-gateway
+  namespace: production
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+
+---
+##############################################################################
+# VIRTUAL SERVICE — route external traffic to API Gateway
+##############################################################################
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: api-gateway-vs
+  namespace: production
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - mesh-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: api-gateway
+        port:
+          number: 3000
+      weight: 100
+    timeout: 15s
+    retries:
+      attempts: 3
+      perTryTimeout: 3s
+      retryOn: "5xx,connect-failure,retriable-4xx"

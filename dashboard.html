@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Microservices Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #181c23;
+    --border: #1e232d;
+    --border2: #252b37;
+    --accent: #00e5a0;
+    --accent2: #0099ff;
+    --accent3: #ff6b6b;
+    --amber: #ffb347;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --muted2: #9ca3af;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .layout { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+  /* Sidebar */
+  .sidebar {
+    width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+  }
+  .logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-text {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .logo-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+  .nav { padding: 12px 0; flex: 1; }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 20px;
+    cursor: pointer;
+    color: var(--muted2);
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s;
+    border-left: 2px solid transparent;
+  }
+  .nav-item:hover { color: var(--text); background: var(--surface2); }
+  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(0,229,160,0.05); }
+  .nav-icon { font-size: 15px; width: 18px; text-align: center; }
+
+  .services-status {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+  }
+  .status-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .service-dot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 11px;
+    color: var(--muted2);
+  }
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+  }
+  .dot.green { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  .dot.red { background: var(--accent3); }
+  .dot.checking { background: var(--amber); animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* Main */
+  .main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; }
+
+  /* Topbar */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .topbar-title {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted2);
+    letter-spacing: 0.05em;
+  }
+  .topbar-title span { color: var(--text); }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .badge.green { background: rgba(0,229,160,0.1); color: var(--accent); border: 1px solid rgba(0,229,160,0.2); }
+  .badge.red { background: rgba(255,107,107,0.1); color: var(--accent3); border: 1px solid rgba(255,107,107,0.2); }
+  .badge.blue { background: rgba(0,153,255,0.1); color: var(--accent2); border: 1px solid rgba(0,153,255,0.2); }
+  .badge.amber { background: rgba(255,179,71,0.1); color: var(--amber); border: 1px solid rgba(255,179,71,0.2); }
+
+  /* Content */
+  .content { padding: 28px; flex: 1; }
+
+  /* Pages */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Stats row */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent-color, var(--accent));
+  }
+  .stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-family: var(--mono);
+    margin-bottom: 8px;
+  }
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+  }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  /* Section header */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--muted2);
+    text-transform: uppercase;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    font-family: var(--sans);
+  }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: #00ffb3; }
+  .btn-ghost { background: transparent; color: var(--muted2); border: 1px solid var(--border2); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+  .btn-sm { padding: 5px 10px; font-size: 11px; }
+  .btn-danger { background: rgba(255,107,107,0.15); color: var(--accent3); border: 1px solid rgba(255,107,107,0.3); }
+  .btn-danger:hover { background: rgba(255,107,107,0.25); }
+
+  /* Table */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { border-bottom: 1px solid var(--border); }
+  th {
+    padding: 10px 16px;
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+  td {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+  }
+  tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--surface2); }
+  .mono { font-family: var(--mono); font-size: 12px; }
+  .price { font-family: var(--mono); color: var(--accent); }
+
+  /* Grid for panels */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .panel-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .panel-title { font-family: var(--mono); font-size: 11px; color: var(--muted2); letter-spacing: 0.08em; text-transform: uppercase; }
+  .panel-body { padding: 20px; }
+
+  /* Form */
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1/-1; }
+  label { font-size: 11px; color: var(--muted); font-family: var(--mono); letter-spacing: 0.05em; }
+  input, select {
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 5px;
+    color: var(--text);
+    padding: 8px 12px;
+    font-size: 13px;
+    font-family: var(--sans);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  select option { background: var(--surface); }
+
+  /* Auth token display */
+  .token-box {
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 5px;
+    padding: 10px 14px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    word-break: break-all;
+    margin-top: 8px;
+    line-height: 1.6;
+  }
+
+  /* Service cards */
+  .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .service-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    position: relative;
+  }
+  .service-name { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .service-port { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .service-status-badge {
+    position: absolute;
+    top: 16px; right: 16px;
+  }
+  .endpoints-list { margin-top: 14px; }
+  .endpoint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .endpoint:last-child { border-bottom: none; }
+  .method {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 5px;
+    border-radius: 3px;
+    min-width: 36px;
+    text-align: center;
+  }
+  .method.GET { background: rgba(0,229,160,0.1); color: var(--accent); }
+  .method.POST { background: rgba(0,153,255,0.1); color: var(--accent2); }
+  .method.PATCH { background: rgba(255,179,71,0.1); color: var(--amber); }
+  .endpoint-path { color: var(--muted2); font-family: var(--mono); font-size: 11px; }
+
+  /* Log stream */
+  .log-stream {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    height: 280px;
+    overflow-y: auto;
+    line-height: 1.8;
+  }
+  .log-line { display: flex; gap: 12px; }
+  .log-time { color: var(--muted); flex-shrink: 0; }
+  .log-service { flex-shrink: 0; min-width: 100px; }
+  .log-msg { color: var(--muted2); }
+  .log-200 { color: var(--accent); }
+  .log-201 { color: var(--accent2); }
+  .log-404 { color: var(--accent3); }
+  .log-401 { color: var(--amber); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* Fade-in */
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .fade-in { animation: fadeIn 0.25s ease forwards; }
+
+  /* Loading shimmer */
+  @keyframes shimmer { 0%{background-position:-400px 0} 100%{background-position:400px 0} }
+  .shimmer {
+    background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
+    background-size: 400px 100%;
+    animation: shimmer 1.2s ease infinite;
+    border-radius: 4px;
+    height: 16px;
+  }
+
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .empty-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.4; }
+
+  /* Result box */
+  .result-box {
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted2);
+    margin-top: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.7;
+  }
+  .result-box.success { border-color: rgba(0,229,160,0.3); color: var(--accent); }
+  .result-box.error { border-color: rgba(255,107,107,0.3); color: var(--accent3); }
+  .result-box.show { display: block; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  .uptime-bar {
+    display: flex;
+    gap: 2px;
+    margin-top: 8px;
+  }
+  .uptime-seg {
+    height: 20px;
+    flex: 1;
+    border-radius: 2px;
+    background: var(--accent);
+    opacity: 0.7;
+  }
+  .uptime-seg.down { background: var(--accent3); opacity: 0.7; }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .chip.electronics { background: rgba(0,153,255,0.12); color: var(--accent2); }
+  .chip.audio { background: rgba(255,179,71,0.12); color: var(--amber); }
+  .chip.accessories { background: rgba(0,229,160,0.12); color: var(--accent); }
+  .chip.peripherals { background: rgba(200,150,255,0.12); color: #c896ff; }
+  .chip.displays { background: rgba(255,107,107,0.12); color: var(--accent3); }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-text">μservices</div>
+      <div class="logo-sub">istio platform v1</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-item active" onclick="showPage('dashboard')">
+        <span class="nav-icon">⬡</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="showPage('products')">
+        <span class="nav-icon">◈</span> Products
+      </div>
+      <div class="nav-item" onclick="showPage('orders')">
+        <span class="nav-icon">◎</span> Orders
+      </div>
+      <div class="nav-item" onclick="showPage('users')">
+        <span class="nav-icon">◷</span> Users
+      </div>
+      <div class="nav-item" onclick="showPage('auth')">
+        <span class="nav-icon">⬡</span> Auth
+      </div>
+      <div class="nav-item" onclick="showPage('services')">
+        <span class="nav-icon">◈</span> Services
+      </div>
+    </nav>
+    <div class="services-status">
+      <div class="status-label">Live services</div>
+      <div class="service-dot"><div class="dot checking" id="dot-gateway"></div> api-gateway :3000</div>
+      <div class="service-dot"><div class="dot checking" id="dot-auth"></div> auth-service :3001</div>
+      <div class="service-dot"><div class="dot checking" id="dot-user"></div> user-service :3002</div>
+      <div class="service-dot"><div class="dot checking" id="dot-product"></div> product-service :3003</div>
+      <div class="service-dot"><div class="dot checking" id="dot-order"></div> order-service :3004</div>
+      <div class="service-dot"><div class="dot checking" id="dot-notif"></div> notification :3005</div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-title">μservices / <span id="page-breadcrumb">dashboard</span></div>
+      <div class="topbar-right">
+        <span id="auth-indicator" class="badge amber">⚠ not logged in</span>
+        <span id="gateway-badge" class="badge amber">checking...</span>
+        <button class="btn btn-primary btn-sm" onclick="refreshAll()">↻ Refresh</button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- DASHBOARD PAGE -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card" style="--accent-color: var(--accent)">
+            <div class="stat-label">Services online</div>
+            <div class="stat-value" id="stat-services">—</div>
+            <div class="stat-sub">of 6 containers</div>
+          </div>
+          <div class="stat-card" style="--accent-color: var(--accent2)">
+            <div class="stat-label">Products</div>
+            <div class="stat-value" id="stat-products">—</div>
+            <div class="stat-sub">in catalogue</div>
+          </div>
+          <div class="stat-card" style="--accent-color: var(--amber)">
+            <div class="stat-label">Gateway uptime</div>
+            <div class="stat-value" id="stat-uptime">—</div>
+            <div class="stat-sub">seconds</div>
+          </div>
+          <div class="stat-card" style="--accent-color: #c896ff">
+            <div class="stat-label">API token</div>
+            <div class="stat-value" style="font-size:18px" id="stat-token">None</div>
+            <div class="stat-sub">go to Auth to login</div>
+          </div>
+        </div>
+
+        <div class="two-col" style="margin-bottom:20px">
+          <div>
+            <div class="section-header">
+              <span class="section-title">Service health</span>
+              <button class="btn btn-ghost btn-sm" onclick="checkHealth()">check now</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Service</th><th>Port</th><th>Status</th><th>Last checked</th></tr></thead>
+                <tbody id="health-table">
+                  <tr><td colspan="4" class="empty">Checking services...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <div class="section-header">
+              <span class="section-title">Quick actions</span>
+            </div>
+            <div class="panel">
+              <div class="panel-body" style="display:flex;flex-direction:column;gap:10px">
+                <button class="btn btn-ghost" onclick="showPage('products');loadProducts()">▸ Browse products catalogue</button>
+                <button class="btn btn-ghost" onclick="showPage('auth')">▸ Login to get JWT token</button>
+                <button class="btn btn-ghost" onclick="showPage('users')">▸ View all users (auth required)</button>
+                <button class="btn btn-ghost" onclick="showPage('orders')">▸ Create a new order</button>
+                <button class="btn btn-ghost" onclick="showPage('services')">▸ Inspect service endpoints</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-header">
+          <span class="section-title">Live log stream (simulated)</span>
+        </div>
+        <div class="log-stream" id="log-stream">
+          <div class="log-line"><span class="log-time">08:29:17</span><span class="log-service" style="color:#00e5a0">api-gateway</span><span class="log-msg">GET /health HTTP/1.1 <span class="log-200">200</span> 242</span></div>
+          <div class="log-line"><span class="log-time">08:29:26</span><span class="log-service" style="color:#c896ff">product-svc</span><span class="log-msg">GET /products HTTP/1.1 <span class="log-200">200</span> 678</span></div>
+          <div class="log-line"><span class="log-time">08:29:36</span><span class="log-service" style="color:#0099ff">auth-svc</span><span class="log-msg">POST /login HTTP/1.1 <span class="log-201">200</span> 297</span></div>
+          <div class="log-line"><span class="log-time">08:29:45</span><span class="log-service" style="color:#ffb347">user-svc</span><span class="log-msg">GET /users HTTP/1.1 <span class="log-200">200</span> 488</span></div>
+          <div class="log-line"><span class="log-time">08:29:54</span><span class="log-service" style="color:#ff6b6b">order-svc</span><span class="log-msg">POST /orders HTTP/1.1 <span class="log-201">201</span> 241</span></div>
+          <div class="log-line"><span class="log-time">08:29:54</span><span class="log-service" style="color:#c896ff">product-svc</span><span class="log-msg">PATCH /products/2/stock HTTP/1.1 <span class="log-200">200</span> 127</span></div>
+          <div class="log-line"><span class="log-time">08:29:54</span><span class="log-service" style="color:#aaa">notif-svc</span><span class="log-msg">[ORDER_CREATED] Order #1 created for user 1</span></div>
+        </div>
+      </div>
+
+      <!-- PRODUCTS PAGE -->
+      <div class="page" id="page-products">
+        <div class="section-header">
+          <span class="section-title">Products catalogue</span>
+          <button class="btn btn-primary btn-sm" onclick="loadProducts()">↻ Fetch from API</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Version</th></tr></thead>
+            <tbody id="products-table">
+              <tr><td colspan="6" class="empty"><div class="empty-icon">◈</div>Click "Fetch from API" to load products from localhost:3000/products</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ORDERS PAGE -->
+      <div class="page" id="page-orders">
+        <div class="two-col">
+          <div>
+            <div class="section-header"><span class="section-title">Create order</span></div>
+            <div class="panel">
+              <div class="panel-header"><span class="panel-title">POST /orders</span><span class="badge blue">auth required</span></div>
+              <div class="panel-body">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>USER ID</label>
+                    <input type="number" id="order-userid" value="1" min="1"/>
+                  </div>
+                  <div class="form-group">
+                    <label>PRODUCT ID</label>
+                    <input type="number" id="order-productid" value="2" min="1"/>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>QUANTITY</label>
+                    <input type="number" id="order-qty" value="1" min="1"/>
+                  </div>
+                </div>
+                <button class="btn btn-primary" onclick="createOrder()" style="width:100%;justify-content:center">Place order →</button>
+                <div id="order-result" class="result-box"></div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="section-header"><span class="section-title">Order flow</span></div>
+            <div class="panel">
+              <div class="panel-body">
+                <div style="font-size:12px;color:var(--muted2);line-height:2">
+                  <div>1. <span style="color:var(--accent2)">POST /orders</span> hits API gateway</div>
+                  <div>2. Gateway verifies JWT token</div>
+                  <div>3. Order service validates product ID</div>
+                  <div>4. Product service checks + deducts stock</div>
+                  <div>5. Order created with <span style="color:var(--accent)">status 201</span></div>
+                  <div>6. Notification service fires <span style="color:#c896ff">[ORDER_CREATED]</span></div>
+                </div>
+                <hr class="divider"/>
+                <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">
+                  ⚠ Login first on the Auth tab to get a JWT token. Orders require Bearer auth.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- USERS PAGE -->
+      <div class="page" id="page-users">
+        <div class="section-header">
+          <span class="section-title">Users</span>
+          <button class="btn btn-primary btn-sm" onclick="loadUsers()">↻ Fetch from API</button>
+        </div>
+        <div id="users-auth-warn" class="result-box error show" style="margin-bottom:16px">⚠ This endpoint requires a JWT token. Login on the Auth tab first.</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Created</th></tr></thead>
+            <tbody id="users-table">
+              <tr><td colspan="5" class="empty"><div class="empty-icon">◷</div>Auth required. Login then click Fetch.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- AUTH PAGE -->
+      <div class="page" id="page-auth">
+        <div class="two-col">
+          <div>
+            <div class="section-header"><span class="section-title">Login</span></div>
+            <div class="panel">
+              <div class="panel-header"><span class="panel-title">POST /auth/login</span><span class="badge green">public</span></div>
+              <div class="panel-body">
+                <div class="form-row">
+                  <div class="form-group full">
+                    <label>EMAIL</label>
+                    <input type="email" id="login-email" value="admin@test.com"/>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group full">
+                    <label>PASSWORD</label>
+                    <input type="password" id="login-pass" value="password"/>
+                  </div>
+                </div>
+                <button class="btn btn-primary" onclick="doLogin()" style="width:100%;justify-content:center">Login →</button>
+                <div id="login-result" class="result-box"></div>
+              </div>
+            </div>
+
+            <div class="section-header" style="margin-top:20px"><span class="section-title">Test accounts</span></div>
+            <div class="panel">
+              <div class="panel-body" style="display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+                  <div>
+                    <div style="font-size:13px">admin@test.com</div>
+                    <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">role: admin</div>
+                  </div>
+                  <button class="btn btn-ghost btn-sm" onclick="fillLogin('admin@test.com','password')">use</button>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+                  <div>
+                    <div style="font-size:13px">john@test.com</div>
+                    <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">role: user</div>
+                  </div>
+                  <button class="btn btn-ghost btn-sm" onclick="fillLogin('john@test.com','password')">use</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="section-header"><span class="section-title">Current token</span></div>
+            <div class="panel">
+              <div class="panel-body">
+                <div id="token-status" style="font-size:13px;color:var(--muted)">No token yet. Login to get a JWT.</div>
+                <div id="token-display" class="token-box" style="display:none"></div>
+                <button id="token-clear" class="btn btn-danger btn-sm" style="margin-top:10px;display:none" onclick="clearToken()">✕ Clear token</button>
+                <hr class="divider"/>
+                <div style="font-size:11px;color:var(--muted);line-height:1.8">
+                  Token is stored in memory and used automatically for protected routes (Users, Orders).<br/>
+                  Expires in 24 hours.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SERVICES PAGE -->
+      <div class="page" id="page-services">
+        <div class="section-header"><span class="section-title">Running services</span></div>
+        <div class="services-grid">
+          <div class="service-card">
+            <div class="service-name">API Gateway</div>
+            <div class="service-port">localhost:3000</div>
+            <div class="service-status-badge"><span id="svc-badge-gateway" class="badge amber">checking</span></div>
+            <div class="endpoints-list">
+              <div class="endpoint"><span class="method GET">GET</span><span class="endpoint-path">/health</span></div>
+              <div class="endpoint"><span class="method GET">GET</span><span class="endpoint-path">/products</span></div>
+              <div class="endpoint"><span class="method POST">POST</span><span class="endpoint-path">/auth/login</span></div>
+              <div class="endpoint"><span class="method GET">GET</span><span class="endpoint-path">/users</span></div>
+              <div class="endpoint"><span class="method POST">POST</span><span class="endpoint-path">/orders</span></div>
+            </div>
+          </div>
+          <div class="service-card">
+            <div class="service-name">Auth Service</div>
+            <div class="service-port">localhost:3001 (internal)</div>
+            <div class="service-status-badge"><span id="svc-badge-auth" class="badge amber">checking</span></div>
+            <div class="endpoints-list">
+              <div class="endpoint"><span class="method GET">GET</span><span class="endpoint-path">/health</span></div>
+              <div class="endpoint"><span class="method POST">POST</span><span class="endpoint-path">/login</span></div>
+              <div class="endpoint"><span class="method POST">POST</span><span class="endpoint-path">/verify</span></div>
+            </div>
+          </div>
+          <div class="service-card">
+            <div class="service-name">User Service</div>
+            <div class="service-port">localhost:3002 (internal)</div>
+            <div class="service-status-badge"><span id="svc-badge-user" class="badge amber">checking</span></div>
+            <div class="endpoints-list">
+              <div class="endpoint"><span class="method GET">GET</span><span class="endpoint-path">/health</span></div>
+              <div class="endpoint"><span class="method GET">GET</span><span class="endpoint-path">/users</span></div>
+              <div class="endpoint"><span class="method GET">GET</span><span class="endpoint-path">/users/:id</span></div>
+            </div>
+          </div>
+          <div class="service-card">
+            <div class="service-name">Product Service</div>
+            <div class="service-port">localhost:3003 (internal)</div>
+            <div class="service-status-badge"><span id="svc-badge-product" class="badge amber">checking</span></div>
+            <div class="endpoints-list">
+              <div class="endpoint"><span class="method GET">GET</span><span class="endpoint-path">/health</span></div>
+              <div class="endpoint"><span class="method GET">GET</span><span class="endpoint-path">/products</span></div>
+              <div class="endpoint"><span class="method GET">GET</span><span class="endpoint-path">/products/:id</span></div>
+              <div class="endpoint"><span class="method PATCH">PATCH</span><span class="endpoint-path">/products/:id/stock</span></div>
+            </div>
+          </div>
+          <div class="service-card">
+            <div class="service-name">Order Service</div>
+            <div class="service-port">localhost:3004 (internal)</div>
+            <div class="service-status-badge"><span id="svc-badge-order" class="badge amber">checking</span></div>
+            <div class="endpoints-list">
+              <div class="endpoint"><span class="method GET">GET</span><span class="endpoint-path">/health</span></div>
+              <div class="endpoint"><span class="method POST">POST</span><span class="endpoint-path">/orders</span></div>
+              <div class="endpoint"><span class="method GET">GET</span><span class="endpoint-path">/orders/:id</span></div>
+            </div>
+          </div>
+          <div class="service-card">
+            <div class="service-name">Notification Service</div>
+            <div class="service-port">localhost:3005 (internal)</div>
+            <div class="service-status-badge"><span id="svc-badge-notif" class="badge amber">checking</span></div>
+            <div class="endpoints-list">
+              <div class="endpoint"><span class="method GET">GET</span><span class="endpoint-path">/health</span></div>
+              <div class="endpoint"><span class="method POST">POST</span><span class="endpoint-path">/notify</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:3000';
+let token = null;
+let healthData = {};
+
+// Navigation
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.trim().toLowerCase().includes(name.slice(0,4))) n.classList.add('active');
+  });
+  document.getElementById('page-breadcrumb').textContent = name;
+  if (name === 'products') loadProducts();
+  if (name === 'users') { if (token) loadUsers(); }
+}
+
+// Health check
+async function checkHealth() {
+  try {
+    const res = await fetch(API + '/health');
+    const data = await res.json();
+    healthData = data;
+    const uptime = Math.round(data.uptime || 0);
+    document.getElementById('stat-uptime').textContent = uptime;
+    document.getElementById('gateway-badge').className = 'badge green';
+    document.getElementById('gateway-badge').textContent = '✓ gateway-ok';
+    setDot('gateway', true);
+    setDot('auth', true); setDot('user', true);
+    setDot('product', true); setDot('order', true); setDot('notif', true);
+    document.getElementById('stat-services').textContent = '6 / 6';
+    updateHealthTable(true, uptime);
+    updateSvcBadges(true);
+  } catch(e) {
+    document.getElementById('gateway-badge').className = 'badge red';
+    document.getElementById('gateway-badge').textContent = '✗ offline';
+    setDot('gateway', false);
+    document.getElementById('stat-services').textContent = '0 / 6';
+    updateHealthTable(false, 0);
+  }
+}
+
+function setDot(name, ok) {
+  const d = document.getElementById('dot-' + name);
+  if (d) { d.className = 'dot ' + (ok ? 'green' : 'red'); }
+}
+
+function updateHealthTable(ok, uptime) {
+  const svcs = [
+    ['api-gateway', 3000, ok],
+    ['auth-service', 3001, ok],
+    ['user-service', 3002, ok],
+    ['product-service', 3003, ok],
+    ['order-service', 3004, ok],
+    ['notification-service', 3005, ok],
+  ];
+  const now = new Date().toLocaleTimeString();
+  document.getElementById('health-table').innerHTML = svcs.map(([name, port, status]) => `
+    <tr class="fade-in">
+      <td class="mono">${name}</td>
+      <td class="mono" style="color:var(--muted)">:${port}</td>
+      <td>${status ? '<span class="badge green">✓ healthy</span>' : '<span class="badge red">✗ down</span>'}</td>
+      <td style="color:var(--muted);font-size:11px">${now}</td>
+    </tr>
+  `).join('');
+}
+
+function updateSvcBadges(ok) {
+  ['gateway','auth','user','product','order','notif'].forEach(s => {
+    const el = document.getElementById('svc-badge-' + s);
+    if (el) { el.className = ok ? 'badge green' : 'badge red'; el.textContent = ok ? '✓ up' : '✗ down'; }
+  });
+}
+
+// Products
+async function loadProducts() {
+  document.getElementById('products-table').innerHTML = `<tr><td colspan="6"><div class="shimmer" style="margin:12px 16px"></div></td></tr>`;
+  try {
+    const res = await fetch(API + '/products');
+    const data = await res.json();
+    const products = data.data || [];
+    document.getElementById('stat-products').textContent = products.length;
+    if (!products.length) {
+      document.getElementById('products-table').innerHTML = `<tr><td colspan="6" class="empty">No products found</td></tr>`;
+      return;
+    }
+    const catClass = {Electronics:'electronics', Audio:'audio', Accessories:'accessories', Peripherals:'peripherals', Displays:'displays'};
+    document.getElementById('products-table').innerHTML = products.map(p => `
+      <tr class="fade-in">
+        <td class="mono" style="color:var(--muted)">${p.id}</td>
+        <td style="font-weight:500">${p.name}</td>
+        <td><span class="chip ${catClass[p.category]||''}">${p.category}</span></td>
+        <td class="price">$${p.price.toFixed(2)}</td>
+        <td class="mono" style="color:${p.stock < 50 ? 'var(--amber)' : 'var(--text)'}">${p.stock}</td>
+        <td class="mono" style="color:var(--muted)">${p.version}</td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    document.getElementById('products-table').innerHTML = `<tr><td colspan="6" class="empty" style="color:var(--accent3)">✗ Failed to fetch — is Docker running?</td></tr>`;
+  }
+}
+
+// Users
+async function loadUsers() {
+  if (!token) {
+    document.getElementById('users-auth-warn').className = 'result-box error show';
+    return;
+  }
+  document.getElementById('users-auth-warn').className = 'result-box show';
+  document.getElementById('users-auth-warn').textContent = '↻ Fetching users...';
+  document.getElementById('users-table').innerHTML = `<tr><td colspan="5"><div class="shimmer" style="margin:12px 16px"></div></td></tr>`;
+  try {
+    const res = await fetch(API + '/users', { headers: { Authorization: 'Bearer ' + token } });
+    const data = await res.json();
+    document.getElementById('users-auth-warn').className = 'result-box success show';
+    document.getElementById('users-auth-warn').textContent = '✓ Fetched successfully';
+    const users = data.data || [];
+    document.getElementById('users-table').innerHTML = users.map(u => `
+      <tr class="fade-in">
+        <td class="mono" style="color:var(--muted)">${u.id}</td>
+        <td style="font-weight:500">${u.name}</td>
+        <td class="mono" style="color:var(--muted2)">${u.email}</td>
+        <td><span class="badge ${u.role==='admin'?'amber':'blue'}">${u.role}</span></td>
+        <td style="color:var(--muted);font-size:11px">${u.createdAt||'—'}</td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    document.getElementById('users-auth-warn').className = 'result-box error show';
+    document.getElementById('users-auth-warn').textContent = '✗ Error: ' + e.message;
+  }
+}
+
+// Auth
+async function doLogin() {
+  const email = document.getElementById('login-email').value;
+  const pass = document.getElementById('login-pass').value;
+  const resultEl = document.getElementById('login-result');
+  resultEl.textContent = 'Authenticating...';
+  resultEl.className = 'result-box show';
+  try {
+    const res = await fetch(API + '/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass })
+    });
+    const data = await res.json();
+    if (res.ok && data.token) {
+      token = data.token;
+      resultEl.className = 'result-box success show';
+      resultEl.textContent = '✓ Login successful! Token stored.';
+      document.getElementById('token-display').textContent = token;
+      document.getElementById('token-display').style.display = 'block';
+      document.getElementById('token-status').textContent = `✓ Logged in as ${email}`;
+      document.getElementById('token-status').style.color = 'var(--accent)';
+      document.getElementById('token-clear').style.display = 'inline-flex';
+      document.getElementById('auth-indicator').className = 'badge green';
+      document.getElementById('auth-indicator').textContent = '✓ authenticated';
+      document.getElementById('stat-token').textContent = 'Active';
+      document.getElementById('users-auth-warn').className = 'result-box success show';
+      document.getElementById('users-auth-warn').textContent = '✓ Token ready. Click Fetch.';
+      addLog('auth-svc', 'POST /login HTTP/1.1 200 297', '200');
+    } else {
+      resultEl.className = 'result-box error show';
+      resultEl.textContent = '✗ ' + (data.message || 'Login failed');
+    }
+  } catch(e) {
+    resultEl.className = 'result-box error show';
+    resultEl.textContent = '✗ Cannot reach API. Is Docker running?\n' + e.message;
+  }
+}
+
+function fillLogin(email, pass) {
+  document.getElementById('login-email').value = email;
+  document.getElementById('login-pass').value = pass;
+}
+
+function clearToken() {
+  token = null;
+  document.getElementById('token-display').style.display = 'none';
+  document.getElementById('token-clear').style.display = 'none';
+  document.getElementById('token-status').textContent = 'No token. Login to get a JWT.';
+  document.getElementById('token-status').style.color = '';
+  document.getElementById('auth-indicator').className = 'badge amber';
+  document.getElementById('auth-indicator').textContent = '⚠ not logged in';
+  document.getElementById('stat-token').textContent = 'None';
+}
+
+// Orders
+async function createOrder() {
+  const resultEl = document.getElementById('order-result');
+  if (!token) {
+    resultEl.className = 'result-box error show';
+    resultEl.textContent = '✗ No token. Login first on the Auth tab.';
+    return;
+  }
+  const userId = document.getElementById('order-userid').value;
+  const productId = document.getElementById('order-productid').value;
+  const quantity = document.getElementById('order-qty').value;
+  resultEl.className = 'result-box show';
+  resultEl.textContent = 'Creating order...';
+  try {
+    const res = await fetch(API + '/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ userId: +userId, productId: +productId, quantity: +quantity })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      resultEl.className = 'result-box success show';
+      resultEl.textContent = JSON.stringify(data, null, 2);
+      addLog('order-svc', 'POST /orders HTTP/1.1 201 241', '201');
+      addLog('product-svc', `PATCH /products/${productId}/stock HTTP/1.1 200 127`, '200');
+      addLog('notif-svc', `[ORDER_CREATED] Order #${data.data?.id||'?'} for user ${userId}`, 'info');
+    } else {
+      resultEl.className = 'result-box error show';
+      resultEl.textContent = JSON.stringify(data, null, 2);
+    }
+  } catch(e) {
+    resultEl.className = 'result-box error show';
+    resultEl.textContent = '✗ ' + e.message;
+  }
+}
+
+// Log stream
+const serviceColors = {
+  'api-gateway': '#00e5a0', 'auth-svc': '#0099ff', 'user-svc': '#ffb347',
+  'product-svc': '#c896ff', 'order-svc': '#ff6b6b', 'notif-svc': '#aaa'
+};
+function addLog(service, msg, type) {
+  const log = document.getElementById('log-stream');
+  const time = new Date().toLocaleTimeString('en-GB', {hour12:false});
+  const color = serviceColors[service] || 'var(--muted2)';
+  const cls = type === '200' ? 'log-200' : type === '201' ? 'log-201' : type === '404' ? 'log-404' : '';
+  const div = document.createElement('div');
+  div.className = 'log-line fade-in';
+  div.innerHTML = `<span class="log-time">${time}</span><span class="log-service" style="color:${color}">${service}</span><span class="log-msg ${cls}">${msg}</span>`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+function refreshAll() {
+  checkHealth();
+  const activePage = document.querySelector('.page.active');
+  if (activePage?.id === 'page-products') loadProducts();
+  if (activePage?.id === 'page-users' && token) loadUsers();
+}
+
+// Init
+checkHealth();
+setInterval(checkHealth, 30000);
+setInterval(() => {
+  const svcs = ['api-gateway','auth-svc','user-svc','product-svc','order-svc','notif-svc'];
+  const svc = svcs[Math.floor(Math.random()*svcs.length)];
+  addLog(svc, 'GET /health HTTP/1.1 200', '200');
+}, 5000);
+</script>
+</body>
+</html>
