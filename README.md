@@ -50,7 +50,7 @@ This platform demonstrates a real-world microservices architecture running 6 ind
 
 ---
 
-## 🏗 Architecture
+## 🏗 Architecture 
 
 ```
                     ┌─────────────────────────────────────────┐
